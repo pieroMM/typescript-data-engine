@@ -95,7 +95,7 @@ A simplified query engine written with Typescript for a small in memory dataset.
     
       * **What changes are needed to process extremely large datasets?**
     
-          Probably we can't rely anymore on an all in-memory approach. We should organize data on the disk and change the semantic of the primary key B+Tree. The key will stay the same, but the values will switch from the record to a specific disk resource that contains the record which the key belongs. We even need a cache mechanism in order to keep in memory the LRU resources, otherwise the performance will degrade.
+          Probably we can't rely anymore on an all in-memory approach. We should organize data on the disk and change the semantic of the primary key B+Tree. The key will stay the same, but the values will switch from the record to a specific disk resource that contains the record which the key belongs. We even need a cache mechanism in order to keep in memory the MRU resources, otherwise the performance will degrade.
       
           The ingestion pipeline will change in order to populate the PK B+Tree in the proper way and transform the processed csv records and persist the result.
     
