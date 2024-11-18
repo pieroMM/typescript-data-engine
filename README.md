@@ -8,8 +8,9 @@ A simplified query engine written with Typescript for a small in memory dataset.
         * NodeJs v20.18.0
         * Npm v10.8.2
     * **Instructions:**
-        * ``npm install``
-        * ``npm run start``
+        * Install dependencies: ``npm install``
+        * Build: ``npm run build``
+        * Run: ``npm run start``
     * **Unit Tests:**
         * ``npm run test``
   * **Usage:** 
