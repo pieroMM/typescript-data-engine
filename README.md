@@ -10,7 +10,7 @@ A simplified query engine written with Typescript for a small in memory dataset.
     * **Instructions:**
         * ``npm install``
         * ``npm run start``
-    * *Unit Tests:**
+    * **Unit Tests:**
         * ``npm run test``
   * **Usage:** 
     * Once the ingest phase has completed, the user can type a query.
