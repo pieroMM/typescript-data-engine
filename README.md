@@ -75,11 +75,11 @@ A simplified query engine written with Typescript for a small in memory dataset.
         
         Another point is related with the error messages, at the moment all syntactic error messages are the same returned by the parsing library.
         
-        Currently, the ingestion is made using a Node.js stream pipeline, instead of handling the backpressure I've just set the high-watermark large then the starting data setsize.
+        Currently, the ingestion is made using a Node.js stream pipeline, instead of handling the backpressure I've just set the high-watermark larger than the starting dataset size.
     
-        Errors that can happen while the pipeline is processing should be handled properly.
+        Errors that happen during the pipeline processing should be handled better.
         
-        A first optimization can consist on using a direct access cache for most recently used data, or for storing the result of the queries most recent. I think I'll try to implement it soon on a separate branch.
+        A first optimization can consist on using a direct access cache for most recently used data, or for storing the result of the queries most recently run. I think I'll try to implement it soon on a separate branch.
 
       * **What changes are needed to accommodate changes to support other data types, multiple filters, or ordering of results?**
 
@@ -101,7 +101,7 @@ A simplified query engine written with Typescript for a small in memory dataset.
     
       * **What do you still need to do to make this code production ready?**
   
-         Increase the test coverage providing unit tests for some corner case, integration tests and event testing the streaming part.
+         Increase the test coverage providing unit tests for some corner cases, integration tests and even testing the streaming part.
          
          Improve the user interface, making it more robust and providing a more complete error handler.
          
