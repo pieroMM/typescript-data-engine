@@ -1,0 +1,35 @@
+{
+  "name": "typescript-data-engine",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "tsc --noEmit && node --import tsx --test **/*.test.ts",
+    "clear": "rimraf ./dist/**/*",
+    "data:copy": "copyfiles ./assets/**/* ./dist",
+    "build": "npm run clear && tsc && npm run data:copy",
+    "start": "node ./dist/index.js",
+    "grammatic:bundle": "npx ohm generateBundles --withTypes src/parser/grammars/queryLanguage.ohm"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "copyfiles": "^2.4.1",
+    "csv-parse": "^5.5.6",
+    "json-schema-to-ts": "^3.1.1",
+    "ohm-js": "^17.1.0",
+    "rimraf": "^6.0.1",
+    "sorted-btree": "^1.8.1",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@ohm-js/cli": "^2.0.0",
+    "@types/node": "^22.9.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "tsx": "^4.19.2",
+    "typescript-eslint": "^8.14.0"
+  }
+}

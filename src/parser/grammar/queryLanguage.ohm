@@ -1,0 +1,31 @@
+Query {
+    Query
+    = Project Filter     -- complete
+    | Project            -- projectOnly
+    | Filter             -- filterOnly
+
+    Number  (a number)
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
+
+    String = "\""alnum+"\""
+
+    columnName = ("0".."9"|"a".."z"|"A".."Z"|"-"|"_")+
+
+    Columns (column list)
+    = ListOf<columnName, ",">
+
+    Project (project expression)
+    = ("PROJECT" | "Project" | "project") Columns
+
+    Filter (filter expression)
+    = ("FILTER" | "Filter" | "filter") FilterPredicate
+
+    FilterPredicate
+    = columnName "<" String -- ltString
+    | columnName ">" String -- gtString
+    | columnName "=" String -- eqString
+    | columnName "<" Number -- ltNumber
+    | columnName ">" Number -- gtNumber
+    | columnName "=" Number -- eqNumber
+}
