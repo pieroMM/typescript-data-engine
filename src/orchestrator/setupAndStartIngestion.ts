@@ -5,7 +5,7 @@ import {ModelSchema} from "../constants/schema";
 import {Collection, IndexableTypes, IndexDescriptor} from "../types";
 import {collectionBuilder, ingestData} from "../ingest";
 
-type Model = FromSchema<typeof ModelSchema>;
+export type Model = FromSchema<typeof ModelSchema>;
 
 /**
  * This function is responsible for preparing and starting the data ingestion

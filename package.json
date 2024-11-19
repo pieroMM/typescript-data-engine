@@ -18,6 +18,7 @@
   "dependencies": {
     "copyfiles": "^2.4.1",
     "csv-parse": "^5.5.6",
+    "data-structure-typed": "^1.53.2",
     "json-schema-to-ts": "^3.1.1",
     "ohm-js": "^17.1.0",
     "rimraf": "^6.0.1",

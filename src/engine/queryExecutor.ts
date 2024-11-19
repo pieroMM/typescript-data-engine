@@ -1,5 +1,6 @@
 import {Collection, QueryDescriptor, Index, FilterDescriptor} from "../types";
 import BTree from "sorted-btree";
+import {TtlCache} from "../cache";
 
 export namespace QueryExecutor {
     /**
@@ -51,28 +52,53 @@ export namespace QueryExecutor {
     }
 
     /**
+     *
+     * @param records
+     * @param key
+     * @param cache
+     * @private
+     */
+    function getAndHandleCache<PrimaryKeyType, RecordType>(records: BTree<PrimaryKeyType, RecordType>, key: PrimaryKeyType, cache?: TtlCache<PrimaryKeyType, RecordType>): RecordType | undefined {
+        if (!!cache) {
+            if (cache.has(key)) {
+                return cache.get(key);
+            } else {
+                let value = records.get(key);
+                if (value) {
+                    cache.set(key, value);
+                    return value;
+                }
+            }
+        } else {
+            return records.get(key);
+        }
+    }
+
+    /**
      * Applies a filter based on the primary key of a given collection and project a list of columns
      *
      * @param filter
      * @param collection
      * @param project
+     * @param recordsCache
      * @private
      */
-    export function applyFilterOnPrimaryKey<RecordType>(filter: FilterDescriptor<RecordType>, collection: Collection<RecordType>, project?: (keyof RecordType)[]): Partial<RecordType>[] {
+    export function applyFilterOnPrimaryKey<RecordType>(filter: FilterDescriptor<RecordType>, collection: Collection<RecordType>, project?: (keyof RecordType)[], recordsCache?: TtlCache<unknown, RecordType>): Partial<RecordType>[] {
         type PrimaryKeyType = typeof collection.primaryKey.type extends "string" ? string : number;
         const {comparator} = filter;
         const value = filter.value as PrimaryKeyType
         const data = collection.data as BTree<PrimaryKeyType, RecordType>;
         const result: Partial<RecordType>[] = [];
         if (comparator === "eq") {
-            const record = data.get(value);
+            // HERE
+            const record = getAndHandleCache<PrimaryKeyType, RecordType>(data, value, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
             if (record) {
                 result.push(project ? projectColumns(record, ...project) : record);
             }
         } else if (comparator === "lt") {
             let lowerKey = data.nextLowerKey(value);
             while (lowerKey) {
-                const record = data.get(lowerKey);
+                const record = getAndHandleCache<PrimaryKeyType, RecordType>(data, lowerKey, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                 if (record) {
                     result.push(project ? projectColumns(record, ...project) : record);
                 }
@@ -81,7 +107,7 @@ export namespace QueryExecutor {
         } else if (comparator === "gt") {
             let higherKey = data.nextHigherKey(value);
             while (higherKey) {
-                const record = data.get(higherKey);
+                const record = getAndHandleCache<PrimaryKeyType, RecordType>(data, higherKey, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                 if (record) {
                     result.push(project ? projectColumns(record, ...project) : record);
                 }
@@ -98,21 +124,23 @@ export namespace QueryExecutor {
      * @param index
      * @param collection
      * @param project
+     * @param recordsCache
      * @private
      */
-    export function applyFilterOnIndex<RecordType>(filter: FilterDescriptor<RecordType>, index: Index<RecordType>, collection: Collection<RecordType>, project?: (keyof RecordType)[]): Partial<RecordType>[] {
-        const {data: primaryKeyData, primaryKey} = collection;
+    export function applyFilterOnIndex<RecordType>(filter: FilterDescriptor<RecordType>, index: Index<RecordType>, collection: Collection<RecordType>, project?: (keyof RecordType)[], recordsCache?: TtlCache<unknown, RecordType>): Partial<RecordType>[] {
+        const {primaryKey} = collection;
         const {data: indexData} = index;
         const {comparator, value} = filter;
         const uniqueIndex = index.descriptor.isUnique;
         type IndexType = typeof index.descriptor.type extends "string" ? string : number;
         type PrimaryKeyType = typeof primaryKey.type extends "string" ? string : number;
+        const primaryKeyData = collection.data as BTree<PrimaryKeyType, RecordType>;
         const result: Partial<RecordType>[] = [];
         if (comparator === "eq") {
             if (uniqueIndex) {
                 const relatedKey = (indexData as BTree<IndexType, PrimaryKeyType>).get(value);
                 if (relatedKey) {
-                    const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(relatedKey);
+                    const record = getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, relatedKey, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                     if (record) {
                         result.push(project ? projectColumns(record, ...project) : record);
                     }
@@ -120,7 +148,7 @@ export namespace QueryExecutor {
             } else {
                 const relatedKeys = (indexData as BTree<IndexType, PrimaryKeyType[]>).get(value) ?? [];
                 for (let key of relatedKeys) {
-                    const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(key);
+                    const record = getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, key, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                     if (record) {
                         result.push(project ? projectColumns(record, ...project) : record);
                     }
@@ -132,7 +160,7 @@ export namespace QueryExecutor {
                 let lowerKey = data.nextLowerKey(value);
                 while (lowerKey) {
                     const key = data.get(lowerKey);
-                    const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(key as PrimaryKeyType);
+                    const record = getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, lowerKey, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                     if (record) {
                         result.push(project ? projectColumns(record, ...project) : record);
                     }
@@ -144,7 +172,7 @@ export namespace QueryExecutor {
                 while (lowerKey) {
                     const keys = data.get(lowerKey);
                     for (let key of keys ?? []) {
-                        const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(key);
+                        const record = getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, key, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                         if (record) {
                             result.push(project ? projectColumns(record, ...project) : record);
                         }
@@ -158,7 +186,7 @@ export namespace QueryExecutor {
                 let higherKey = data.nextHigherKey(value);
                 while (higherKey) {
                     const key = data.get(higherKey);
-                    const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(key as PrimaryKeyType);
+                    const record= getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, higherKey, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                     if (record) {
                         result.push(project ? projectColumns(record, ...project) : record);
                     }
@@ -170,7 +198,7 @@ export namespace QueryExecutor {
                 while (higherKey) {
                     const keys = data.get(higherKey);
                     for (let key of keys ?? []) {
-                        const record = (primaryKeyData as BTree<PrimaryKeyType, RecordType>).get(key);
+                        const record = getAndHandleCache<PrimaryKeyType, RecordType>(primaryKeyData, key, recordsCache as TtlCache<PrimaryKeyType, RecordType>);
                         if (record) {
                             result.push(project ? projectColumns(record, ...project) : record);
                         }
@@ -214,17 +242,18 @@ export namespace QueryExecutor {
      *
      * @param queryDescriptor
      * @param collection
+     * @param recordsCache
      */
-    export function executeQuery<RecordType>(queryDescriptor: QueryDescriptor<RecordType>, collection: Collection<RecordType>): Partial<RecordType>[] {
+    export function executeQuery<RecordType>(queryDescriptor: QueryDescriptor<RecordType>, collection: Collection<RecordType>, recordsCache?: TtlCache<unknown, RecordType>): Partial<RecordType>[] {
         const {project, filter} = queryDescriptor;
         if (filter) {
             const {columnName} = filter;
             if (isPrimaryKeyFilter(columnName, collection)) {
-                return applyFilterOnPrimaryKey(filter, collection, project);
+                return applyFilterOnPrimaryKey(filter, collection, project, recordsCache);
             } else if (isIndexFilter(columnName, collection)) {
                 const index = getIndex(columnName.toString(), collection);
                 if (index) {
-                    return applyFilterOnIndex(filter, index, collection, project);
+                    return applyFilterOnIndex(filter, index, collection, project, recordsCache);
                 }
                 throw Error("Index definition mismatch")
             } else {
